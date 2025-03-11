@@ -1,0 +1,114 @@
+#include <iostream>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+
+using namespace std; 
+
+#define __file__ strrchr(__FILE__, '/')?strrchr(__FILE__, '/')+1:__FILE__
+#define dbg(fmt, ...) do{\
+	fprintf(stdout, "%s(%d)@%s: " fmt "\n", __FUNCTION__, __LINE__, __file__, ## __VA_ARGS__); \
+}while(0); 
+#define dbge(fmt, ...) do{\
+	fprintf(stderr, "%s(%d)@%s: " fmt "\n", __FUNCTION__, __LINE__, __file__, ## __VA_ARGS__); \
+}while(0); 
+
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+#define FUNC_BAR "=================================="
+#define FUNC_TITLE() \
+    do { \
+        printf("%.*s %s %.*s\n", (int)(strlen(FUNC_BAR)-strlen(__FUNCTION__)/2), FUNC_BAR, __FUNCTION__, (int)(strlen(FUNC_BAR)-strlen(__FUNCTION__)/2-strlen(__FUNCTION__)%2), FUNC_BAR); \
+    } while(0); 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+int c_main(int argc, char *argv[]);
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+int cpp_main(int argc, char **argv);
+
+#include <functional>
+#include <stack>
+
+class Cleanup {
+public: 
+	Cleanup(){}
+	void defer(function<void()> func){
+		cleanup_functions.push(func); 
+	}
+	void dump(void){
+		cout << "size(" << cleanup_functions.size() << ")" << endl; 
+	}
+	~Cleanup(){
+		// cleanup_function(); 
+		while(!cleanup_functions.empty()){
+			cleanup_functions.top()(); 
+			cleanup_functions.pop(); 
+		}
+	}
+private: 
+	function<void()> cleanup_function; 
+	stack<function <void()>> cleanup_functions; 
+}; 
+void testcase001(void){
+	int fd=1; 
+	dbge("fd(%d)", fd); 
+	Cleanup c; 
+	c.defer([&](){
+		fd=0; 
+		dbge("fd(%d)", fd); 
+	}); 
+	c.defer([&](){
+		dbge("fd(%d)", fd); 
+	}); 
+	c.dump(); 
+}
+int main(int argc, char *argv[]){
+    FUNC_TITLE(); 
+	testcase001(); 
+	return 0; 
+#if 0
+	{
+		stack<function<void(int)>> s1; 
+		s1.push([&](int _x){
+			dbge("_x(%d)", _x); 
+		}); 
+		s1.push([&](int _x){
+			dbge("_x(%d)", _x); 
+		}); 
+		function<void(int)> defer_func3=[&](int _x){
+			dbge("_x(%d)", _x); 
+		}; 
+		s1.push(defer_func3); 
+		dbge("s1.size(%ld)", s1.size()); 
+		while(!s1.empty()){
+			s1.top()(s1.size()); 
+			s1.pop(); 
+		}
+	}
+#endif
+    exit(EXIT_SUCCESS);
+}
+

@@ -1,0 +1,156 @@
+/* Merge Sort: (2+2), (4+4), ...., (n/2+n/2) = 4 + 8 + 16 + .... + n ; size = log(n)
+MergeSort(array, n)
+	LArray=&array[0]
+	LN=n/2
+	RArray=&array[LN]
+	RN=n-LN
+	ArrangeLR(inArray, inN, inLArray, inLN, inRArray, inRN)
+		outArray[inN]
+		outN=0, outLN=0, outRN=0
+		WHILE outLN<inLN AND outRN<inRN DO
+			IF inLArray[outLN]<inRArray[outRN] DO
+				outArray[outN]=inLArray[outLN]
+				outLN++
+				outN++
+			ELSE
+				outArray[outN]=inRArray[outRN]
+				outRN++
+				outN++
+			END IF
+		END WHILE
+		WHILE outLN<inLN DO
+			outArray[outN]=inLArray[outLN]
+			outLN++
+			outN++
+		END WHILE
+		WHILE outRN<inRN DO
+			outArray[outN]=inRArray[outRN]
+			outRN++
+			outN++
+		END WHILE
+		FOR i FROM 0 TO inN-1 DO
+			inArray[i]=outArray[i]
+		END FOR
+	END ArrangeLR
+	IF n>=2 DO
+		MergeSort(LArray, LN)
+		MergeSort(RArray, RN)
+		ArrangeLR(array, n, LArray, LN, RArray, RN)
+	END IF
+END MergeSort
+*/
+/* Heap Sort
+BuildHeap(array, n){
+	// 0, 1, 2, 3....
+	// (0, 1, 2) (1, 3, 4) (2, 5, 6) ...
+	// L=(root+1)*2-1  R=(root+1)*2
+	// rootId=len/2
+	lastRootId=n/2-1
+	FOR rootId FROM lasRootId to 0 DO
+		sonId=2*rootId+1
+		IF sonId+1<n AND array[sonId+1] > array[sonId] DO
+			sonId++
+		ENd IF
+		IF array[sonId]>array[rootId] DO
+			key=array[sonId]
+			array[sonId]=array[rootId]
+			array[rootId]=key
+		END IF
+	END FOR
+}
+CheckHeap(array, n){
+	lastRootId=n/2-1
+	FOR rootId FROM 0 to lastRootId DO
+		GET_biggerSonId(){
+			biggerSonId=2*rootId+1
+			IF biggerSonId+1<n AND array[biggerSonId+1]>array[biggerSonId] DO
+				biggerSonId++
+			END IF
+		}
+		GET_biggerSonId()
+		IF array[rootId]>array[biggerSonId] DO
+			BREAK FOR
+		ELSE 
+			// SWAP(root,biggerSon)
+			key=array[rootId]
+			array[rootId]=array[biggerSonId]
+			array[biggerSonId]=key
+		END IF
+	END FOR
+}
+swap(&A,&B){
+	C=A
+	A=B
+	B=C
+}
+HeapSort(array, n){
+	BuildHeap(array, n)
+	FOR len FROM n-1 TO 1 DO 
+		swap(array[0], array[len])
+		CheckHeap(array[0], len)
+	END FOR
+}
+*/
+/*
+QuickSort(array, n){
+	IF n>=2 DO
+		pivot=array[0]
+		array_sort[n]
+		leftLen=0
+		rightLen=0
+		FOR i FROM 1 to n-1 DO
+			IF array[i]>pivot DO
+				array_sort[n-1-rightLen]=array[i]
+				rightLen++
+			ELSE
+				array_sort[leftLen]=array[i]
+				leftLen++
+			END IF
+		END FOR
+		array_sort[leftLen]=pivot
+		FOR i FROM 0 to n-1 DO
+			array[i]=array_sort[i]
+		END FOR
+		QuickSort(&array[0], leftLen)
+		QuickSort(&array[leftLen+1], rightLen)
+	END IF
+}
+*/
+
+
+/*
+Algorithm: BubbleSort(number array[], size=n)
+Input: array[n]
+Output: sorted array in accending order
+
+FOR size FROM n to 2 DO
+  id=0
+  lastId=size-1
+  WHILE id != lastId DO
+    IF array[id]>array[id+1] DO
+      key=array[id]
+      array[id]=array[id+1]
+      array[id+1]=key
+    END IF
+    id++
+  END WHILE
+END FOR
+
+*/
+
+
+/*
+Algorithm: InsertionSort(array, n)
+Input: array[n] 
+Output: sorted array in accending order
+
+FOR i FROM 1 TO n-1 DO
+  j = i
+  WHILE (j > 0) AND (array[j] > array[j-1]) DO
+    key = array[j]
+    array[j] = array[j-1]
+    array[j-1] = key
+    j = j - 1
+  ENd WHILE
+END FOR
+*/

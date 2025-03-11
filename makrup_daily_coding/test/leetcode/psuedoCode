@@ -1,0 +1,33 @@
+/*
+2 <= nums.length <= 10^4
+-10^9 <= nums[i] <= 10^9
+coPrime(n , n+1)
+hashTable1Size=10001
+hashTable2Size=10002
+10001 * 10002 > 10^9
+hashTable1[10001], hashTable2[10002]
+FUNCTION initHash()
+	FOR i FROM 0 TO 10000 DO
+		hashTable1[i]=0
+		hashTable2[i]=0
+	END FOR
+	hashTable2[10001]=0
+END FUNCTION
+FUNCTION setHash(inNum) -> hash1, hash2; hash1: 0: no, 1: positive, 2: negative, 3: both
+	IF inNUM<0 DO
+		hashTable1[inNum%10001]|=2
+		hashTable2[inNum%10002]|=2
+	ELSE
+		hashTable1[inNum%10001]|=1
+		hashTable2[inNum%10002]|=1
+	END IF
+END FUNCTION
+FUNCTION getHash(inNum) -> hash1, hash2; hash1: 0: no, 1: positive, 2: negative, 3: both
+	IF inNUM<0 DO
+		checkValue=2
+	ELSE
+		checkValue=1
+	END IF
+	RETURN (hashTable1[inNum%10001]&checkValue) && (hashTable2[inNum%10002]&checkValue)
+END FUNCTION
+*/

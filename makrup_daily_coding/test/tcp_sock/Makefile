@@ -1,0 +1,26 @@
+
+# DESTDIR=$(shell realpath ../build)
+DESTDIR=../build
+# TARGETS=test svr cli shell_svr shell_svr2 shell_cli shell_cli2 socket_un_svr
+TARGETS=$(patsubst %.c,%,$(wildcard *.c))
+vpath %.c src
+.PHONY: build
+LDFLAGS=-Wall
+CFLAGS=-Wall
+LIBS=-pthread -lutil
+
+all: $(DESTDIR) $(addprefix $(DESTDIR)/,$(TARGETS))
+
+$(DESTDIR)/%: %.o
+	$(CC) $(LDFALGS) -o $@ $(addprefix $(DESTDIR)/,$^) $(LIBS)
+
+clean: 
+	rm -rf $(DESTDIR)
+
+$(DESTDIR):
+	mkdir -p $@
+
+%.o: %.c Makefile
+	$(CC) $(CFLAGS) -o $(DESTDIR)/$@ -c $<
+
+-include $(wildcard $(DESTDIR)/*.d)

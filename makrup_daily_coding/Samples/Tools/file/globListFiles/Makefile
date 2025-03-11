@@ -1,0 +1,54 @@
+
+currdir=$(shell pwd)
+target=sample
+cppsrcs=$(wildcard *.cpp)
+csrcs=$(wildcard *.c)
+headers=$(wildcard *.h)
+objs=$(patsubst %.cpp,%.cpp.o,$(cppsrcs))
+objs+=$(patsubst %.c,%.c.o,$(csrcs))
+defs=$(patsubst %.cpp,%.cpp.d,$(cppsrcs))
+defs+=$(patsubst %.c,%.c.d,$(csrcs))
+macros=$(patsubst %.cpp,%.cpp.m,$(cppscs))
+macros+=$(patsubst %.c,%.c.m,$(csrcs))
+
+CFLAGS=-Wall --save-temp -I$(currdir)
+CFLAGS+=-g -finstrument-functions 
+
+CXXFLAGS=-Wall --save-temp -I$(currdir)
+CXXFLAGS+=-g -finstrument-functions 
+
+LDFLAGS=-Wall 
+
+LIBS=-lpthread
+
+.SUFFIXES: 
+
+all: $(target)
+
+.PHONY: $(target)
+$(target): $(defs) $(macros) $(objs) $(headers)
+	$(CXX) $(LDFLAGS) -o $@ $(objs) $(LIBS)
+
+%.cpp.o: %.cpp
+	$(CXX) $(CXXFLAGS) -o $@ -c $^
+
+%.cpp.d: %.cpp
+	$(CXX) -E -dD $(CXXFLAGS) $^ > $@
+
+%.cpp.m: %.cpp
+	$(CXX) -E -dM $(CXXFLAGS) $^ > $@
+
+%.c.o: %.c
+	$(CC) $(CFLAGS) -o $@ -c $^
+
+%.c.d: %.c
+	$(CC) -E -dD $(CFLAGS) $^ > $@
+
+%.c.m: %.c
+	$(CC) -E -dM $(CFLAGS) $^ > $@
+
+clean: 
+	rm -rf $(target)
+	rm -rf *.[oidsm]
+	rm -rf *.ii
+

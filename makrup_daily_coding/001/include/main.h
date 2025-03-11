@@ -1,0 +1,9 @@
+#ifndef __main_h__
+#define __main_h__
+#include <stdio.h>
+#include <string.h>
+int __indent=0; 
+#include "debug.h"
+#include "tcp_svr_cli.h"
+#include "test.h"
+#endif /*__main_h__*/

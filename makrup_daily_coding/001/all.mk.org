@@ -1,0 +1,42 @@
+
+vpath %.c src
+vpath %.h include
+
+CFLAGS:=
+CFLAGS+=-Wall -MMD -MP
+CFLAGS+=-Iinclude
+
+LDFLAGS:=
+LIBS:=-pthread
+
+DESTDIR:=build
+TARGET:=$(DESTDIR)/sample
+
+.SUFFIXES: 
+.PHONY: all clean
+
+all: $(DESTDIR) $(TARGET) 
+
+$(DESTDIR): 
+	mkdir -p $@
+
+$(TARGET): $(patsubst src/%.c,$(DESTDIR)/%.o,$(wildcard src/*.c))
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+clean: 
+	rm -rf build
+
+$(DESTDIR)/%.o: src/%.c $(lastword $(MAKEFILE_LIST))
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+test_targets=test_wildcard test_MAKEFILE_LIST
+test:$(test_targets) 
+test_wildcard_sources:=$(wildcard src/*.c)
+test_wildcard: 
+	@echo "\$$(wildcard src/*.c)="$(test_wildcard_sources)
+test_MAKEFILE_LIST: $(lastword $(MAKEFILE_LIST))
+	@echo MAKEFILE_LIST=$(MAKEFILE_LIST)
+	@echo "\$$(lastword \$$(MAKEFILE_LIST))=$<"
+
+-include $(wildcard $(DESTDIR)/*.d)
+

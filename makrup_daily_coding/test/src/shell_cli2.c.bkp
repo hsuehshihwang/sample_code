@@ -1,0 +1,89 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+
+#define SERVER_IP "127.0.0.1"
+#define PORT 54188
+#define BUFFER_SIZE 1024
+
+int main() {
+    int client_fd;
+    struct sockaddr_in server_addr;
+#if 1
+    char buffer[BUFFER_SIZE];
+#endif
+    char input[BUFFER_SIZE];
+
+    // Create a socket
+    client_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (client_fd < 0) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Configure server address
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(PORT);
+    if (inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr) <= 0) {
+        perror("Invalid address");
+        close(client_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // Connect to the server
+    if (connect(client_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        perror("Connection failed");
+        close(client_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    while (1) {
+        fgets(input, BUFFER_SIZE, stdin);
+        send(client_fd, input, strlen(input), 0);
+
+#if 0
+		ssize_t bytes_received = 0; 
+		if (ioctl(client_fd, FIONREAD, &bytes_received) < 0) {
+			break; 
+		}
+		printf("bytes_received(%ld)\n", bytes_received); 
+		if(bytes_received>0){
+			uint8_t *data=malloc(bytes_received+1); 
+			if(data){
+				ssize_t bytes_received = recv(client_fd, data, bytes_received, 0);
+				data[bytes_received]='\0'; 
+				size_t start=0; 
+				while(start<bytes_received+1){
+					if(data[start]=='\0'){
+						start++; 
+						continue; 
+					}
+        			printf("data(start(%s))", data+start);
+					start+=strlen((const char *)data+start)+1; 
+				}
+				free(data); 
+				data=NULL; 
+			}
+		}else if(bytes_received==0){
+			break; 
+		}else{
+			break; 
+		}
+#else
+        // Receive and print the server's response
+        ssize_t bytes_received = recv(client_fd, buffer, BUFFER_SIZE - 1, 0);
+        if (bytes_received <= 0) break;
+        buffer[bytes_received] = '\0';
+        printf("%s", buffer);
+#endif
+    }
+
+    // Close the connection
+    close(client_fd);
+    printf("Disconnected.\n");
+    return 0;
+}
+
