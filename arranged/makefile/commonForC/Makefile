@@ -48,7 +48,7 @@ all:
 
 $(foreach t,$(TARGETS),$(eval $(call srcs_to_objs,$(t),$($(t)_SRCS))))
 
-all: $(DESTDIR) $(SVR) $(CLI)
+all: $(DESTDIR) $(foreach t,$(TARGETS),$($(t)))
 
 $(DESTDIR):
 	$(_@) mkdir -p $@
